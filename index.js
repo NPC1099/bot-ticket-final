@@ -89,6 +89,16 @@ client.on('interactionCreate', async (interaction) => {
 
     if (interaction.customId === 'menu_ticket') {
 
+  await interaction.deferReply({ ephemeral: true });
+
+  if (tickets.has(interaction.user.id)) {
+    return interaction.editReply({
+      content: 'Você já possui um ticket aberto.'
+    });
+  }
+
+  const tipo = interaction.values[0];
+
       if (tickets.has(interaction.user.id)) {
         return interaction.reply({
           content: 'Você já possui um ticket aberto.',
