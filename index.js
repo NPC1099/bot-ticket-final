@@ -1,172 +1,152 @@
 const {
   Client,
   GatewayIntentBits,
-  Partials,
+  PermissionsBitField,
+  ChannelType,
+  EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ChannelType,
-  PermissionsBitField,
-  SlashCommandBuilder,
-  REST,
-  Routes,
-  EmbedBuilder
-} = require('discord.js');
-require('dotenv').config();
+  Events,
+  Collection
+} = require("discord.js");
 
-// Criação do client
+const TOKEN = "SEU_TOKEN_AQUI";
+
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
-  partials: [Partials.Channel]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
 });
 
-// Registro do Slash Command
-const commands = [
-  new SlashCommandBuilder()
-    .setName('ticket')
-    .setDescription('Envia o painel de tickets')
-    .toJSON()
-];
+client.once("ready", () => {
+  console.log(`Bot ligado como ${client.user.tag}`);
+});
 
-const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-(async () => {
-  try {
-    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
-    console.log('✅ Slash command registrado.');
-  } catch (error) {
-    console.error(error);
+client.on(Events.InteractionCreate, async interaction => {
+  if (!interaction.isButton()) return;
+
+  // Criar ticket
+  if (interaction.customId === "criar_ticket") {
+
+    const canal = await interaction.guild.channels.create({
+      name: `ticket-${interaction.user.username}`,
+      type: ChannelType.GuildText,
+      permissionOverwrites: [
+        {
+          id: interaction.guild.id,
+          deny: [PermissionsBitField.Flags.ViewChannel]
+        },
+        {
+          id: interaction.user.id,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
+        }
+      ]
+    });
+
+    const fecharBtn = new ButtonBuilder()
+      .setCustomId("fechar_ticket")
+      .setLabel("Fechar Ticket")
+      .setStyle(ButtonStyle.Danger);
+
+    const row = new ActionRowBuilder().addComponents(fecharBtn);
+
+    await canal.send({
+      content: `${interaction.user}`,
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("🎫 Ticket Criado")
+          .setDescription("Explique seu problema e aguarde a staff.")
+          .setColor("Blue")
+      ],
+      components: [row]
+    });
+
+    await interaction.reply({ content: `Ticket criado: ${canal}`, ephemeral: true });
   }
-})();
 
-// Evento ready
-client.once('ready', () => {
-  console.log(`✅ Bot online como ${client.user.tag}`);
-});
+  // Fechar ticket
+  if (interaction.customId === "fechar_ticket") {
 
-// Interações
-client.on('interactionCreate', async interaction => {
+    const mensagens = await interaction.channel.messages.fetch({ limit: 100 });
 
-  // Comando /ticket
-  if (interaction.isChatInputCommand() && interaction.commandName === 'ticket') {
+    let transcript = "=== TRANSCRIPT DO TICKET ===\n\n";
 
-    await interaction.deferReply({ ephemeral: true });
+    mensagens.reverse().forEach(msg => {
+      transcript += `${msg.author.tag}: ${msg.content}\n`;
+    });
 
-    const embed = new EmbedBuilder()
-      .setTitle('Painel de Tickets')
-      .setDescription('Escolha o tipo de ticket que deseja abrir:')
-      .setColor('#010101')
-      .setFooter({ text: 'Suporte Geral' });
+    try {
+      const user = interaction.channel.permissionOverwrites.cache
+        .find(p => p.type === 1 && p.allow.has(PermissionsBitField.Flags.ViewChannel))
+        ?.id;
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('ticket_middle')
-        .setLabel('Solicite Middle')
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId('ticket_cross')
-        .setLabel('Solicite Um Cross-trade Middle')
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId('ticket_denuncia')
-        .setLabel('Denúncia')
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId('ticket_suporte')
-        .setLabel('Suporte')
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId('ticket_leilao')
-        .setLabel('Leilão')
-        .setStyle(ButtonStyle.Secondary)
+      if (user) {
+        const membro = await interaction.guild.members.fetch(user);
+        await membro.send("📄 Aqui está o transcript do seu ticket:");
+        await membro.send("```" + transcript.slice(0, 1900) + "```");
+      }
+    } catch (err) {
+      console.log("Não consegui enviar DM");
+    }
+
+    // Sistema de avaliação
+    const estrelas = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("1").setLabel("⭐").setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("2").setLabel("⭐⭐").setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("3").setLabel("⭐⭐⭐").setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("4").setLabel("⭐⭐⭐⭐").setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("5").setLabel("⭐⭐⭐⭐⭐").setStyle(ButtonStyle.Success)
     );
 
-    await interaction.editReply({ embeds: [embed], components: [row] });
+    await interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("Avaliação")
+          .setDescription("Avalie o atendimento antes do ticket ser deletado.")
+          .setColor("Yellow")
+      ],
+      components: [estrelas]
+    });
   }
 
-  // Botões
-  if (interaction.isButton()) {
+  // Avaliação
+  if (["1","2","3","4","5"].includes(interaction.customId)) {
 
-    let nomeTicket, corTicket = '#010101', tipo = '';
+    await interaction.reply({
+      content: `Obrigado pela avaliação: ${interaction.customId} ⭐`,
+      ephemeral: true
+    });
 
-    switch(interaction.customId) {
-      case 'ticket_middle':
-        nomeTicket = `ticket-middle-${interaction.user.username.substring(0,15)}`;
-        corTicket = '#010101';
-        tipo = 'Solicite Middle';
-        break;
-      case 'ticket_cross':
-        nomeTicket = `ticket-cross-${interaction.user.username.substring(0,15)}`;
-        corTicket = '#010101';
-        tipo = 'Solicite Um Cross-trade Middle';
-        break;
-      case 'ticket_denuncia':
-        nomeTicket = `ticket-denuncia-${interaction.user.username.substring(0,15)}`;
-        corTicket = '#010101';
-        tipo = 'Denúncia';
-        break;
-      case 'ticket_suporte':
-        nomeTicket = `ticket-suporte-${interaction.user.username.substring(0,15)}`;
-        corTicket = '#010101';
-        tipo = 'Suporte';
-        break;
-      case 'ticket_leilao':
-        nomeTicket = `ticket-leilao-${interaction.user.username.substring(0,15)}`;
-        corTicket = '#010101';
-        tipo = 'Leilão';
-        break;
-      case 'fechar_ticket':
-        await interaction.channel.delete();
-        return;
-    }
-
-    if(interaction.customId !== 'fechar_ticket') {
-
-      const closePerms = [
-        { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-        { id: interaction.user.id, allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages,
-            PermissionsBitField.Flags.ReadMessageHistory
-          ]
-        }
-      ];
-
-      const suporteRole = interaction.guild.roles.cache.find(r => r.name === 'Suporte');
-      if(suporteRole) {
-        closePerms.push({
-          id: suporteRole.id,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages,
-            PermissionsBitField.Flags.ReadMessageHistory
-          ]
-        });
-      }
-
-      await interaction.deferReply({ ephemeral: true });
-
-      const channel = await interaction.guild.channels.create({
-        name: nomeTicket,
-        type: ChannelType.GuildText,
-        permissionOverwrites: closePerms
-      });
-
-      const ticketEmbed = new EmbedBuilder()
-        .setTitle(`🎫 ${tipo}`)
-        .setDescription(`${interaction.user}, nossa equipe irá te atender em breve!`)
-        .setColor(corTicket);
-
-      const closeRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('fechar_ticket')
-          .setLabel('🔒 Fechar Ticket')
-          .setStyle(ButtonStyle.Danger)
-      );
-
-      await channel.send({ embeds: [ticketEmbed], components: [closeRow] });
-      await interaction.editReply({ content: ` 👍 ticket criado: ${channel}` });
-    }
+    setTimeout(() => {
+      interaction.channel.delete().catch(() => {});
+    }, 3000);
   }
 });
 
-client.login(process.env.TOKEN);
+// Comando para enviar painel
+client.on("messageCreate", async message => {
+  if (message.content === "!painel") {
+
+    const botao = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("criar_ticket")
+        .setLabel("Abrir Ticket")
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    await message.channel.send({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("Suporte")
+          .setDescription("Clique no botão abaixo para abrir um ticket.")
+          .setColor("Green")
+      ],
+      components: [botao]
+    });
+  }
+});
+
+client.login(TOKEN);
