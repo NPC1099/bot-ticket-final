@@ -52,10 +52,10 @@ client.on('interactionCreate', async interaction => {
     await interaction.deferReply({ ephemeral: true });
 
     const embed = new EmbedBuilder()
-      .setTitle('🎫 Painel de Tickets')
+      .setTitle('Painel de Tickets')
       .setDescription('Escolha o tipo de ticket que deseja abrir:')
-      .setColor('#5865F2')
-      .setFooter({ text: 'Equipe de Suporte' });
+      .setColor('#010101')
+      .setFooter({ text: 'Suporte Geral' });
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -86,32 +86,32 @@ client.on('interactionCreate', async interaction => {
   // Botões
   if (interaction.isButton()) {
 
-    let nomeTicket, corTicket = '#2f3136', tipo = '';
+    let nomeTicket, corTicket = '#010101', tipo = '';
 
     switch(interaction.customId) {
       case 'ticket_middle':
         nomeTicket = `ticket-middle-${interaction.user.username.substring(0,15)}`;
-        corTicket = '#5865F2';
+        corTicket = '#010101';
         tipo = 'Solicite Middle';
         break;
       case 'ticket_cross':
         nomeTicket = `ticket-cross-${interaction.user.username.substring(0,15)}`;
-        corTicket = '#43B581';
+        corTicket = '#010101';
         tipo = 'Solicite Um Cross-trade Middle';
         break;
       case 'ticket_denuncia':
         nomeTicket = `ticket-denuncia-${interaction.user.username.substring(0,15)}`;
-        corTicket = '#F04747';
+        corTicket = '#010101';
         tipo = 'Denúncia';
         break;
       case 'ticket_suporte':
         nomeTicket = `ticket-suporte-${interaction.user.username.substring(0,15)}`;
-        corTicket = '#43B581';
+        corTicket = '#010101';
         tipo = 'Suporte';
         break;
       case 'ticket_leilao':
         nomeTicket = `ticket-leilao-${interaction.user.username.substring(0,15)}`;
-        corTicket = '#FAA61A';
+        corTicket = '#010101';
         tipo = 'Leilão';
         break;
       case 'fechar_ticket':
@@ -164,7 +164,7 @@ client.on('interactionCreate', async interaction => {
       );
 
       await channel.send({ embeds: [ticketEmbed], components: [closeRow] });
-      await interaction.editReply({ content: `✅ Seu ticket foi criado: ${channel}` });
+      await interaction.editReply({ content: ` 👍 ticket criado: ${channel}` });
     }
   }
 });
