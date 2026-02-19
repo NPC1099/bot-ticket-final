@@ -22,7 +22,7 @@ const client = new Client({
   ]
 });
 
-// ===== REGISTRAR SLASH =====
+// ===== REGISTRAR SLASH COMMAND =====
 const commands = [
   new SlashCommandBuilder()
     .setName('ticket')
@@ -33,10 +33,15 @@ const commands = [
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
 (async () => {
-  await rest.put(
-    Routes.applicationCommands(process.env.CLIENT_ID),
-    { body: commands }
-  );
+  try {
+    await rest.put(
+      Routes.applicationCommands(process.env.CLIENT_ID),
+      { body: commands }
+    );
+    console.log("Slash command registrado.");
+  } catch (error) {
+    console.error(error);
+  }
 })();
 
 // ===== BOT ONLINE =====
@@ -47,7 +52,7 @@ client.once('ready', () => {
 // ===== INTERAÇÕES =====
 client.on('interactionCreate', async interaction => {
 
-  // PAINEL
+  // COMANDO /ticket
   if (interaction.isChatInputCommand()) {
     if (interaction.commandName === 'ticket') {
 
@@ -67,9 +72,10 @@ client.on('interactionCreate', async interaction => {
     }
   }
 
-  // ABRIR TICKET
+  // BOTÕES
   if (interaction.isButton()) {
 
+    // ABRIR TICKET
     if (interaction.customId === 'abrir_ticket') {
 
       const canal = await interaction.guild.channels.create({
@@ -93,7 +99,7 @@ client.on('interactionCreate', async interaction => {
 
       const embedTicket = new EmbedBuilder()
         .setTitle('🎫 Ticket Aberto')
-        .setDescription('Descreva seu problema.\nQuando finalizar clique em **Fechar Ticket**.')
+        .setDescription('Explique seu problema.\nClique em **Fechar Ticket** quando terminar.')
         .setColor('#000000');
 
       const row = new ActionRowBuilder().addComponents(
@@ -120,10 +126,14 @@ client.on('interactionCreate', async interaction => {
 
       const attachment = await transcripts.createTranscript(interaction.channel);
 
-      await interaction.user.send({
-        content: '📂 Aqui está a transcript do seu ticket:',
-        files: [attachment]
-      });
+      try {
+        await interaction.user.send({
+          content: '📂 Aqui está a transcript do seu ticket:',
+          files: [attachment]
+        });
+      } catch {
+        console.log("Não consegui enviar DM.");
+      }
 
       const embed = new EmbedBuilder()
         .setTitle('⭐ Avalie o Atendimento')
@@ -156,9 +166,7 @@ client.on('interactionCreate', async interaction => {
         interaction.channel.delete();
       }, 3000);
     }
-
   }
-
 });
 
 client.login(process.env.TOKEN);
