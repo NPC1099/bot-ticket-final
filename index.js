@@ -45,8 +45,8 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 })();
 
 // ===== BOT ONLINE =====
-client.once('ready', () => {
-  console.log(`Bot online como ${client.user.tag}`);
+client.once('clientReady', (c) => {
+  console.log(`Bot online como ${c.user.tag}`);
 });
 
 // ===== INTERAÇÕES =====
