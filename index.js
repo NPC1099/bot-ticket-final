@@ -87,67 +87,67 @@ client.on('interactionCreate', async (interaction) => {
   // MENU SELECIONADO
   if (interaction.isStringSelectMenu()) {
 
-    if (interaction.customId === 'menu_ticket') {
+  if (interaction.customId === 'menu_ticket') {
 
-  await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: true });
 
-  if (tickets.has(interaction.user.id)) {
-    return interaction.editReply({
-      content: 'Você já possui um ticket aberto.'
+    if (tickets.has(interaction.user.id)) {
+      return interaction.editReply({
+        content: 'Você já possui um ticket aberto.'
+      });
+    }
+
+    const tipo = interaction.values[0];
+
+    const channel = await interaction.guild.channels.create({
+      name: `${tipo}-${interaction.user.username}`,
+      permissionOverwrites: [
+        {
+          id: interaction.guild.id,
+          deny: [PermissionsBitField.Flags.ViewChannel]
+        },
+        {
+          id: interaction.user.id,
+          allow: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.SendMessages
+          ]
+        },
+        {
+          id: process.env.STAFF_ROLE_ID,
+          allow: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.SendMessages
+          ]
+        }
+      ]
+    });
+
+    tickets.set(interaction.user.id, channel.id);
+
+    const fecharBtn = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('fechar_ticket')
+        .setLabel('Fechar Ticket')
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    await channel.send({
+      content: `<@${interaction.user.id}>`,
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(`Ticket - ${tipo}`)
+          .setDescription('Descreva seu problema detalhadamente.')
+          .setColor('#000000')
+      ],
+      components: [fecharBtn]
+    });
+
+    await interaction.editReply({
+      content: `Seu ticket foi criado: ${channel}`
     });
   }
-
-  const tipo = interaction.values[0];
-
-      if (tickets.has(interaction.user.id)) {
-        return interaction.reply({
-          content: 'Você já possui um ticket aberto.',
-          ephemeral: true
-        });
-      }
-
-      const tipo = interaction.values[0];
-
-      const channel = await interaction.guild.channels.create({
-        name: `${tipo}-${interaction.user.username}`,
-        permissionOverwrites: [
-          {
-            id: interaction.guild.id,
-            deny: [PermissionsBitField.Flags.ViewChannel]
-          },
-          {
-            id: interaction.user.id,
-            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
-          },
-          {
-            id: process.env.STAFF_ROLE_ID,
-            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
-          }
-        ]
-      });
-
-      tickets.set(interaction.user.id, channel.id);
-
-      const fecharBtn = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('fechar_ticket')
-          .setLabel('Fechar Ticket')
-          .setStyle(ButtonStyle.Danger)
-      );
-
-      await channel.send({
-        content: `<@${interaction.user.id}>`,
-        embeds: [
-          new EmbedBuilder()
-            .setTitle(`Ticket - ${tipo}`)
-            .setDescription('Descreva seu problema detalhadamente.')
-            .setColor('#000000')
-        ],
-        components: [fecharBtn]
-      });
-
-      await interaction.reply({
-        content: `Seu ticket foi criado: ${channel}`,
+  }
         ephemeral: true
       });
     }
