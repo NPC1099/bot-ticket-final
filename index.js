@@ -84,8 +84,9 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
+  
   // MENU SELECIONADO
-  if (interaction.isStringSelectMenu()) {
+if (interaction.isStringSelectMenu()) {
 
   if (interaction.customId === 'menu_ticket') {
 
@@ -147,7 +148,7 @@ client.on('interactionCreate', async (interaction) => {
       content: `Seu ticket foi criado: ${channel}`
     });
   }
-  }
+}
         ephemeral: true
       });
     }
