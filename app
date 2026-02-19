@@ -20,7 +20,7 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
-// Slash command
+// Registro do Slash Command
 const commands = [
   new SlashCommandBuilder()
     .setName('ticket')
@@ -28,14 +28,10 @@ const commands = [
     .toJSON()
 ];
 
-// Registro do comando
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 (async () => {
   try {
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commands }
-    );
+    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
     console.log('✅ Slash command registrado.');
   } catch (error) {
     console.error(error);
@@ -52,6 +48,9 @@ client.on('interactionCreate', async interaction => {
 
   // Comando /ticket
   if (interaction.isChatInputCommand() && interaction.commandName === 'ticket') {
+
+    // Defer para não dar "Aplicativo não respondeu"
+    await interaction.deferReply({ ephemeral: true });
 
     const embed = new EmbedBuilder()
       .setTitle('🎫 Painel de Tickets')
@@ -82,15 +81,13 @@ client.on('interactionCreate', async interaction => {
         .setStyle(ButtonStyle.Secondary)
     );
 
-    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    await interaction.editReply({ embeds: [embed], components: [row] });
   }
 
   // Botões
   if (interaction.isButton()) {
 
-    let nomeTicket;
-    let corTicket = '#2f3136';
-    let tipo = '';
+    let nomeTicket, corTicket = '#2f3136', tipo = '';
 
     switch(interaction.customId) {
       case 'ticket_middle':
@@ -135,6 +132,7 @@ client.on('interactionCreate', async interaction => {
         }
       ];
 
+      // Cargo de suporte
       const suporteRole = interaction.guild.roles.cache.find(r => r.name === 'Suporte');
       if(suporteRole) {
         closePerms.push({
@@ -147,6 +145,7 @@ client.on('interactionCreate', async interaction => {
         });
       }
 
+      // DeferReply antes de criar canal
       await interaction.deferReply({ ephemeral: true });
 
       const channel = await interaction.guild.channels.create({
