@@ -1,13 +1,14 @@
 {
-  "name": "ticket-bot",
+  "name": "ticket-advanced",
   "version": "1.0.0",
-  "description": "Sistema de tickets com avaliação e transcript",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
-    "discord-html-transcripts": "^3.0.1"
+    "dotenv": "^16.4.5",
+    "discord-html-transcripts": "^3.1.5"
   }
 }
