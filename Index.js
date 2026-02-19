@@ -14,6 +14,7 @@ const {
 } = require('discord.js');
 require('dotenv').config();
 
+// Criação do client
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
   partials: [Partials.Channel]
@@ -81,7 +82,7 @@ client.on('interactionCreate', async interaction => {
         .setStyle(ButtonStyle.Secondary)
     );
 
-    await interaction.reply({ embeds: [embed], components: [row], flags: 64 });
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
   }
 
   // Botões
@@ -146,7 +147,7 @@ client.on('interactionCreate', async interaction => {
         });
       }
 
-      await interaction.deferReply({ flags: 64 });
+      await interaction.deferReply({ ephemeral: true });
 
       const channel = await interaction.guild.channels.create({
         name: nomeTicket,
