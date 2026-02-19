@@ -2,9 +2,10 @@
   "name": "bot-ticket",
   "version": "1.0.0",
   "description": "Bot de Ticket Discord",
-  "main": "app/index.js",
-  "scripts": {
-    "start": "node app/index.js"
+  "main": "index.js",
+"scripts": {
+  "start": "node index.js"
+}
   },
   "engines": {
     "node": ">=18.0.0"
