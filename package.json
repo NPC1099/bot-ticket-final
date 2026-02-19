@@ -1,12 +1,16 @@
 {
-  "name": "bot-ticket",
+  "name": "hyper-ticket-bot",
   "version": "1.0.0",
+  "description": "Sistema de Ticket Completo com Avaliação e Transcript",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node index.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
-    "discord.js": "^14.14.1",
-    "dotenv": "^16.4.5"
+    "discord.js": "^14.14.1"
   }
 }
